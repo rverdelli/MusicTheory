@@ -388,7 +388,7 @@ function renderMarkdownSimple(text) {
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-  html = html.replace(/\\n/g, '<br>');
+  html = html.replace(/\n/g, '<br>');
   return html;
 }
 
