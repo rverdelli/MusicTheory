@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -34,13 +34,14 @@ def utc_now() -> str:
     return datetime.utcnow().isoformat(timespec="seconds")
 
 
+def empty_store() -> dict:
+    return {"comments": [], "consolidated_comments": [], "executive_summaries": []}
+
+
 def ensure_store() -> None:
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not DATA_PATH.exists():
-        DATA_PATH.write_text(
-            json.dumps({"comments": [], "consolidated_comments": [], "executive_summaries": []}, indent=2),
-            encoding="utf-8",
-        )
+        DATA_PATH.write_text(json.dumps(empty_store(), indent=2), encoding="utf-8")
 
 
 def load_store() -> dict:
@@ -50,6 +51,10 @@ def load_store() -> dict:
 
 def save_store(store: dict) -> None:
     DATA_PATH.write_text(json.dumps(store, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def reset_store() -> None:
+    save_store(empty_store())
 
 
 def call_openai(api_key: str, system_prompt: str, user_prompt: str) -> str:
@@ -182,18 +187,23 @@ INDEX_HTML = """
     .container { max-width:1150px; margin:20px auto; padding:0 16px; }
     .card { background:#1e293b; border-radius:10px; padding:16px; margin-bottom:14px; }
     textarea,input,button { width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; box-sizing:border-box; }
+    .checkbox-line { display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .checkbox-line input[type='checkbox'] { width:auto; margin:0; padding:0; }
     button { background:#22c55e; color:#052e16; font-weight:700; cursor:pointer; }
     table { width:100%; border-collapse:collapse; margin-top:8px; }
     th,td { border:1px solid #334155; padding:8px; text-align:left; font-size:14px; vertical-align:top; }
     .row { display:grid; grid-template-columns:2fr 1fr; gap:12px; }
     .hint { color:#93c5fd; font-size:14px; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; }
+    .top-actions { display:flex; gap:8px; }
     .gear { width:auto; padding:8px 12px; background:#94a3b8; color:#0f172a; }
+    .danger { width:auto; padding:8px 12px; background:#ef4444; color:#fff; }
     .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.7); z-index:1000; }
     .modal { max-width:820px; margin:6vh auto; background:#1e293b; border-radius:10px; padding:16px; border:1px solid #334155; }
     .modal-actions { display:flex; gap:8px; margin-top:8px; }
     .secondary { background:#64748b; color:#f8fafc; }
     .warn { color:#fca5a5; }
+    #summaryText { white-space: normal; line-height:1.5; }
   </style>
 </head>
 <body>
@@ -203,19 +213,58 @@ INDEX_HTML = """
       <h1>AI Comments Workbench</h1>
       <p>Prototype: comment workflow, consolidation, auto-summary, and AI analysis.</p>
     </div>
-    <button class='gear' onclick='openConfig()'>⚙️ Configuration</button>
+    <div class='top-actions'>
+      <button class='danger' onclick='resetAllData()'>🗑️ Reset all data</button>
+      <button class='gear' onclick='openConfig()'>⚙️ Configuration</button>
+    </div>
+  </div>
+
+
+  <div class='card'>
+    <h3>1) Financial performance snapshot (example data)</h3>
+    <p class='hint'>Hypothetical company KPI view for comparative commentary (2025 vs 2024, multi-country).</p>
+
+    <table>
+      <tr>
+        <th>Country</th>
+        <th>Revenue 2024 (M€)</th>
+        <th>Revenue 2025 (M€)</th>
+        <th>EBITDA Margin 2024</th>
+        <th>EBITDA Margin 2025</th>
+        <th>Operating Cash Flow 2024 (M€)</th>
+        <th>Operating Cash Flow 2025 (M€)</th>
+      </tr>
+      <tr><td>Italy</td><td>420</td><td>390</td><td>18.2%</td><td>15.1%</td><td>61</td><td>47</td></tr>
+      <tr><td>Germany</td><td>310</td><td>430</td><td>14.7%</td><td>20.4%</td><td>38</td><td>72</td></tr>
+      <tr><td>Spain</td><td>190</td><td>230</td><td>12.9%</td><td>14.2%</td><td>25</td><td>33</td></tr>
+      <tr><td>France</td><td>280</td><td>275</td><td>16.1%</td><td>15.4%</td><td>44</td><td>40</td></tr>
+    </table>
+
+    <table>
+      <tr>
+        <th>Group KPI</th>
+        <th>2024</th>
+        <th>2025</th>
+        <th>Comment cue</th>
+      </tr>
+      <tr><td>Total Revenue (M€)</td><td>1,200</td><td>1,325</td><td>Group growth driven mostly by Germany and Spain.</td></tr>
+      <tr><td>Weighted EBITDA Margin</td><td>15.8%</td><td>17.0%</td><td>Profitability improved despite Italy decline.</td></tr>
+      <tr><td>Total Operating Cash Flow (M€)</td><td>168</td><td>192</td><td>Cash conversion strengthened in core growth markets.</td></tr>
+    </table>
+
+    <p class='hint'>Storyline: Italy contracted in volume and margin (pricing pressure), while Germany had strong recovery and mix improvement. Spain accelerated from new client wins; France stayed broadly stable. Net effect: company-level performance improved even with one country underperforming.</p>
   </div>
 
   <div class='card'>
-    <h3>1) Insert comment</h3>
+    <h3>2) Insert comment</h3>
     <div class='row'>
       <div>
         <label>Comment</label>
         <textarea id='commentText' rows='7' placeholder='Write your comment...'></textarea>
       </div>
       <div>
-        <label><input type='checkbox' id='guidance'/> Suggest improvements before submit</label>
-        <label><input type='checkbox' id='translate'/> Normalize to English before submit</label>
+        <label class='checkbox-line'><input type='checkbox' id='guidance'/> <span>Suggest improvements before submit</span></label>
+        <label class='checkbox-line'><input type='checkbox' id='translate'/> <span>Normalize to English before submit</span></label>
         <button onclick='saveComment()'>Save comment</button>
         <p class='hint'>If improvement is enabled, the first click opens a popup with suggestions and revised text. Then edit/copy and save again.</p>
       </div>
@@ -223,12 +272,16 @@ INDEX_HTML = """
     <div id='saveMessage' class='hint'></div>
   </div>
 
-  <div class='card'><h3>2) Raw comments</h3><div id='commentsTable'></div></div>
-  <div class='card'><h3>3) AI consolidated comments</h3><div id='consolidatedTable'></div></div>
-  <div class='card'><h3>4) Executive summary</h3><div id='summaryTable'></div></div>
+  <div class='card'><h3>3) Raw comments</h3><div id='commentsTable'></div></div>
+  <div class='card'><h3>4) AI consolidated comments</h3><div id='consolidatedTable'></div></div>
+  <div class='card'>
+    <h3>5) Executive summary</h3>
+    <div id='summaryText' class='hint'></div>
+    <p id='summaryMeta' class='hint'></p>
+  </div>
 
   <div class='card'>
-    <h3>5) Analysis Q&A</h3>
+    <h3>6) Analysis Q&A</h3>
     <input id='question' placeholder='Ask a question about consolidated comments' />
     <button onclick='askQuestion()'>Analyze</button>
     <p id='answer'></p>
@@ -323,11 +376,49 @@ function tableFromRows(rows) {
   return `<table>${thead}${body}</table>`;
 }
 
+function escapeHtml(text) {
+  return (text || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+function renderMarkdownSimple(text) {
+  let html = escapeHtml(text || 'No executive summary generated yet.');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
 async function refresh() {
   const state = await api('/api/state');
   document.getElementById('commentsTable').innerHTML = tableFromRows(state.comments);
   document.getElementById('consolidatedTable').innerHTML = tableFromRows(state.consolidated_comments);
-  document.getElementById('summaryTable').innerHTML = tableFromRows(state.executive_summaries);
+
+  const latestSummary = (state.executive_summaries && state.executive_summaries.length)
+    ? state.executive_summaries[state.executive_summaries.length - 1]
+    : null;
+
+  document.getElementById('summaryText').innerHTML = renderMarkdownSimple(latestSummary ? latestSummary.summary_text : 'No executive summary generated yet.');
+  document.getElementById('summaryMeta').innerText = latestSummary ? `Updated at: ${latestSummary.created_at}` : '';
+}
+
+async function resetAllData() {
+  const ok = window.confirm('Delete all comments, consolidated comments and summary?');
+  if (!ok) return;
+  const res = await api('/api/reset', 'POST', {});
+  const msg = document.getElementById('saveMessage');
+  if (res.error) {
+    msg.innerHTML = `<span class='warn'>${res.error}</span>`;
+    return;
+  }
+  msg.innerText = 'All data cleared.';
+  improvementReady = false;
+  document.getElementById('commentText').value = '';
+  document.getElementById('answer').innerText = '';
+  refresh();
 }
 
 async function saveComment() {
@@ -426,6 +517,11 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"error": "Not found"}, status=HTTPStatus.NOT_FOUND)
 
     def do_POST(self) -> None:  # noqa: N802
+        if self.path == "/api/reset":
+            reset_store()
+            self._send_json({"status": "ok"})
+            return
+
         if self.path == "/api/comment":
             body = self._read_json()
             text = (body.get("text") or "").strip()
