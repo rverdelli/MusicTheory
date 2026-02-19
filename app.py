@@ -14,6 +14,7 @@ HOST = "0.0.0.0"
 PORT = 8501
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_MODEL = "gpt-4o-mini"
+BUILD_ID = "2026-02-19-cachefix"
 
 
 @dataclass
@@ -211,7 +212,7 @@ INDEX_HTML = """
   <div class='topbar'>
     <div>
       <h1>AI Comments Workbench</h1>
-      <p>Prototype: comment workflow, consolidation, auto-summary, and AI analysis.</p>
+      <p>Prototype: comment workflow, consolidation, auto-summary, and AI analysis. <span class='hint'>(build: 2026-02-19-cachefix)</span></p>
     </div>
     <div class='top-actions'>
       <button class='danger' onclick='resetAllData()'>🗑️ Reset all data</button>
@@ -245,11 +246,10 @@ INDEX_HTML = """
         <th>Group KPI</th>
         <th>2024</th>
         <th>2025</th>
-        <th>Comment cue</th>
       </tr>
-      <tr><td>Total Revenue (M€)</td><td>1,200</td><td>1,325</td><td>Group growth driven mostly by Germany and Spain.</td></tr>
-      <tr><td>Weighted EBITDA Margin</td><td>15.8%</td><td>17.0%</td><td>Profitability improved despite Italy decline.</td></tr>
-      <tr><td>Total Operating Cash Flow (M€)</td><td>168</td><td>192</td><td>Cash conversion strengthened in core growth markets.</td></tr>
+      <tr><td>Total Revenue (M€)</td><td>1,200</td><td>1,325</td></tr>
+      <tr><td>Weighted EBITDA Margin</td><td>15.8%</td><td>17.0%</td></tr>
+      <tr><td>Total Operating Cash Flow (M€)</td><td>168</td><td>192</td></tr>
     </table>
 
     <p class='hint'>Storyline: Italy contracted in volume and margin (pricing pressure), while Germany had strong recovery and mix improvement. Spain accelerated from new client wins; France stayed broadly stable. Net effect: company-level performance improved even with one country underperforming.</p>
