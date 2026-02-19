@@ -383,23 +383,12 @@ function escapeHtml(text) {
     .replaceAll('>', '&gt;');
 }
 
-function wrapBetween(text, marker, openTag, closeTag) {
-  const parts = text.split(marker);
-  if (parts.length < 3) return text;
-  let out = '';
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 1) out += openTag + parts[i] + closeTag;
-    else out += parts[i];
-  }
-  return out;
-}
-
 function renderMarkdownSimple(text) {
   let html = escapeHtml(text || 'No executive summary generated yet.');
-  html = wrapBetween(html, '**', '<strong>', '</strong>');
-  html = wrapBetween(html, '`', '<code>', '</code>');
-  html = wrapBetween(html, '*', '<em>', '</em>');
-  html = html.split(String.fromCharCode(10)).join('<br>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  html = html.replace(/\n/g, '<br>');
   return html;
 }
 
@@ -512,11 +501,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
-            return
-
-        if parsed.path == "/favicon.ico":
-            self.send_response(HTTPStatus.NO_CONTENT)
-            self.end_headers()
             return
 
         if parsed.path == "/api/state":
