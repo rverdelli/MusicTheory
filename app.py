@@ -14,7 +14,6 @@ HOST = "0.0.0.0"
 PORT = 8501
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_MODEL = "gpt-4o-mini"
-BUILD_ID = "2026-02-19-cachefix"
 
 
 @dataclass
@@ -212,7 +211,7 @@ INDEX_HTML = """
   <div class='topbar'>
     <div>
       <h1>AI Comments Workbench</h1>
-      <p>Prototype: comment workflow, consolidation, auto-summary, and AI analysis. <span class='hint'>(build: 2026-02-19-cachefix)</span></p>
+      <p>Prototype: comment workflow, consolidation, auto-summary, and AI analysis.</p>
     </div>
     <div class='top-actions'>
       <button class='danger' onclick='resetAllData()'>🗑️ Reset all data</button>
