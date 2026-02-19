@@ -388,7 +388,7 @@ function renderMarkdownSimple(text) {
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-  html = html.split(String.fromCharCode(10)).join('<br>');
+  html = html.replace(/\n/g, '<br>');
   return html;
 }
 
